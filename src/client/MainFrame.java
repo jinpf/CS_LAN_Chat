@@ -6,21 +6,30 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 public class MainFrame {
 	private frmlogin loginf;
 	private frmsignup signupf;
 	private frmuser userf;
+	private Socket sconnect;
 	
 	public MainFrame() {
 		loginf=new frmlogin();
@@ -78,6 +87,8 @@ public class MainFrame {
 					new ActionListener(){
 						public void actionPerformed(ActionEvent e) {
 							if(e.getSource()==jbsignup){
+								
+								//start sign up frame
 								jflogin.setVisible(false);
 								signupf=new frmsignup();
 								
@@ -90,13 +101,86 @@ public class MainFrame {
 					new ActionListener(){
 						public void actionPerformed(ActionEvent e) {
 							if(e.getSource()==jblogin){
-								userf=new frmuser(jtfname.getText());
+								if (jtfname.getText().equals("")){
+									JOptionPane.showMessageDialog(jflogin.getContentPane(),
+											"用户名不能为空", "请检查！", JOptionPane.WARNING_MESSAGE);
+								}else{
+									
+									//send login message to check
+									try {
+										sconnect=new Socket("localhost", 8888);
+										DataInputStream in =new DataInputStream(sconnect.getInputStream());
+										DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
+										jblogin.setEnabled(false);
+										
+										//construct on-line string
+										JsonObject message=new JsonObject();
+										message.addProperty("name", jtfname.getText());
+										message.addProperty("password", String.valueOf(jpfpassword.getPassword()));
+										message.addProperty("type", 1);
+										Gson cgson=new Gson();
+										String str=cgson.toJson(message);
+										out.writeUTF(str);
+										Thread listenT=new Thread(
+												new Runnable(){
+													public void run(){
+														try {
+															DataInputStream in =new DataInputStream(sconnect.getInputStream());
+															sconnect.setSoTimeout(500);
+															String str=in.readUTF();
+															Gson gson=new Gson();
+															Connection message=gson.fromJson(str, Connection.class);
+															int type=message.gettype();
+															if (type==8){//ok!
+																//start user frame
+																userf=new frmuser(jtfname.getText());
+																loginf.setvisible(false);
+															}else if(type==9){
+																JOptionPane.showMessageDialog(jflogin.getContentPane(),
+																		message.getinform(), "注册失败！", JOptionPane.WARNING_MESSAGE);
+																if (sconnect!=null&&!sconnect.isClosed()){
+																	try {
+																		sconnect.close();
+																	} catch (Exception e2) {
+																	}
+																}
+															}
+																	
+														} catch (Exception e) {
+															if (sconnect!=null&&!sconnect.isClosed()){
+																try {
+																	sconnect.close();
+																} catch (Exception e2) {
+																}
+															}
+															JOptionPane.showMessageDialog(jflogin.getContentPane(),
+																	e.getMessage(), "登录失败！", JOptionPane.WARNING_MESSAGE);
+														}
+														jblogin.setEnabled(true);
+													}
+												});
+										listenT.start();
+										
+									} catch (Exception e1) {
+										jblogin.setEnabled(true);
+										JOptionPane.showMessageDialog(jflogin.getContentPane(),
+												e1.getMessage(), "连接失败！", JOptionPane.WARNING_MESSAGE);
+										if (sconnect!=null&&!sconnect.isClosed()){
+											try {
+												sconnect.close();
+											} catch (Exception e2) {
+											}
+										}
+									}
+								}
+
+								
 							}
 						}
 					});
 		}
 		/**
-		 * set frame visible
+		 * set login frame visible
 		 * @param state
 		 * boolean
 		 */
@@ -168,13 +252,89 @@ public class MainFrame {
 						}
 					});
 			
+			//user sign up
 			jbsignup.addActionListener(
 					new ActionListener(){
 						public void actionPerformed(ActionEvent e) {
 							if(e.getSource()==jbsignup){
+								if (jtfname.getText().equals("")){
+									JOptionPane.showMessageDialog(jfsignup.getContentPane(),
+											"用户名不能为空", "请检查！", JOptionPane.WARNING_MESSAGE);
+								}else{
+									String password=String.valueOf(jpfpassword.getPassword());
+									if (password.equals(String.valueOf(jpfconfirmpw.getPassword()))){
+										jbsignup.setEnabled(false);
+										//send login message to check
+										try {
+											sconnect=new Socket("localhost", 8888);
+											DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
+											
+											
+											//construct sign up string
+											JsonObject message=new JsonObject();
+											message.addProperty("name", jtfname.getText());
+											message.addProperty("password", password);
+											message.addProperty("type", 0);
+											Gson cgson=new Gson();
+											String str=cgson.toJson(message);
+											out.writeUTF(str);
+											Thread listenT=new Thread(
+													new Runnable(){
+														public void run(){
+															try {
+																DataInputStream in =new DataInputStream(sconnect.getInputStream());
+																sconnect.setSoTimeout(500);
+																String str=in.readUTF();
+																Gson gson=new Gson();
+																Connection message=gson.fromJson(str, Connection.class);
+																int type=message.gettype();
+																if (type==8){//ok!
+																	//start user frame
+																	userf=new frmuser(jtfname.getText());
+																	jfsignup.dispose();
+																}else if(type==9){
+																	JOptionPane.showMessageDialog(jfsignup.getContentPane(),
+																			message.getinform(), "注册失败！", JOptionPane.WARNING_MESSAGE);
+																	if (sconnect!=null&&!sconnect.isClosed()){
+																		try {
+																			sconnect.close();
+																		} catch (Exception e2) {
+																		}
+																	}
+																}				
+															} catch (Exception e) {
+																try {
+																	sconnect.close();
+																} catch (IOException e1) {
+																}
+																JOptionPane.showMessageDialog(jfsignup.getContentPane(),
+																		e.getMessage(), "接收失败！", JOptionPane.WARNING_MESSAGE);
+															}
+															jbsignup.setEnabled(true);
+														}
+													});
+											listenT.start();
+											
+										} catch (Exception e1) {
+											jbsignup.setEnabled(true);
+											JOptionPane.showMessageDialog(jfsignup.getContentPane(),
+													e1.getMessage(), "连接失败！", JOptionPane.WARNING_MESSAGE);
+											if (sconnect!=null&&!sconnect.isClosed()){
+												try {
+													sconnect.close();
+												} catch (Exception e2) {
+												}
+											}
+										}
+										
+									}else{
+										JOptionPane.showMessageDialog(jfsignup.getContentPane(),
+												"请检测密码设置", "请检查！", JOptionPane.WARNING_MESSAGE);
+									}
+								}
 								
-								userf=new frmuser(jtfname.getText());
-								jfsignup.dispose();
+								
+								
 							}
 						}
 					});
@@ -224,6 +384,81 @@ public class MainFrame {
 						}
 					});
 			
+		}
+	}
+	
+	
+	
+	//connect message format
+	public class Connection{
+		private int ID;
+		private String name;
+		private String password;
+		//type: 0 sign up ;1 sign in;2 on-line;3 off-line ;4 list;8 OK;9 error
+		private int type;
+		private String ip;
+		private int mport;
+		private int fport;
+		private String inform;
+		private Ulist[] ulists;
+		
+		public int getID(){
+			return ID;
+		}
+		
+		public String getname(){
+			return name;
+		}
+		
+		public String getpassword(){
+			return password;
+		}
+		
+		public int gettype(){
+			return type;
+		}
+		
+		public String getip(){
+			return ip;
+		}
+		
+		public int getmport(){
+			return mport;
+		}
+		
+		public int getfport(){
+			return fport;
+		}
+		
+		public String getinform(){
+			return inform;
+		}
+		
+		public Ulist[] getulist(){
+			return ulists;
+		}
+		
+	}
+	/**
+	 * list information
+	 * @author jinpf
+	 *
+	 */
+	public class Ulist{
+		private int ID;
+		private String name;
+		private int state;
+		
+		public int getID(){
+			return ID;
+		}
+		
+		public String name(){
+			return name;
+		}
+		
+		public int state(){
+			return state;
 		}
 	}
 	

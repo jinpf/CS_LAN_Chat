@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 /**
  * connection server,listen to connections,handle client register on-line off-line
  * @author jinpf
@@ -32,10 +35,51 @@ public class Cserver {
 									DataOutputStream out=new DataOutputStream(client.getOutputStream());
 									while(state){
 										try{
-											String str;
-											str=in.readUTF();
-											////////////////
-											System.out.println(str);
+											String istr;
+											istr=in.readUTF();
+											System.out.println(istr);
+											Gson cigson=new Gson();
+											Connection Cmessage=cigson.fromJson(istr, Connection.class);
+											int type=Cmessage.gettype();
+											if (type==0){//sign up
+												//check SQL to see if contain the user
+												
+												
+												
+												
+												//send OK message
+												JsonObject message8=new JsonObject();
+												message8.addProperty("type", 8);
+												Gson cogson08=new Gson();
+												String ostr8=cogson08.toJson(message8);
+												out.writeUTF(ostr8);
+												
+//												//send Error message
+//												JsonObject message9=new JsonObject();
+//												message9.addProperty("type", 9);
+//												message9.addProperty("inform", "用户已存在！");
+//												Gson cogson09=new Gson();
+//												String ostr9=cogson09.toJson(message9);
+//												out.writeUTF(ostr9);
+											}else if(type==1){
+												//check SQL to see if user password correct
+												
+												//send OK message
+												JsonObject message8=new JsonObject();
+												message8.addProperty("type", 8);
+												Gson cogson08=new Gson();
+												String ostr8=cogson08.toJson(message8);
+												out.writeUTF(ostr8);
+												
+//												//send Error message
+//												JsonObject message9=new JsonObject();
+//												message9.addProperty("type", 9);
+//												message9.addProperty("inform", "用户名或密码错误！");
+//												Gson cogson09=new Gson();
+//												String ostr9=cogson09.toJson(message9);
+//												out.writeUTF(ostr9);
+											}
+											
 											
 										}catch(Exception e2){
 											System.out.println(e2.getMessage());
@@ -64,11 +108,11 @@ public class Cserver {
 	 * @author jinpf
 	 *
 	 */
-	public class connection{
+	public class Connection{
 		private int ID;
 		private String name;
 		private String password;
-		//type: 0 sign in ;1 on-line;2 off-line ;3 list;8 ok;9 error
+		//type: 0 sign up ;1 sign in;2 on-line;3 off-line ;4 list;8 OK;9 error
 		private int type;
 		private String ip;
 		private int mport;
