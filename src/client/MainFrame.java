@@ -10,6 +10,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -350,10 +352,16 @@ public class MainFrame {
 		private JFrame jfuser;
 		private JList jluser;
 		private JScrollPane jspuser;
+		private String Name;
+		private int ID;
+		private boolean state=true;
+		private Ulist[] ulists;
+		private Vector<String> v=new Vector<String>();
 		
-		public frmuser(String name,int ID){
-			jfuser=new JFrame(name);
-			
+		public frmuser(String name,int id){
+			Name=name;
+			jfuser=new JFrame(Name);
+			ID=id;
 			jluser=new JList();
 			jluser.setBorder(BorderFactory.createTitledBorder("所有用户："));
 			jluser.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -376,12 +384,86 @@ public class MainFrame {
 						 * it happens when close the windows
 						 */
 						public void windowClosing(WindowEvent e){
+							//off-line
 							
+							state=false;
 							
+							if (sconnect!=null&&!sconnect.isClosed()){
+								try {
+									sconnect.close();
+								} catch (Exception e2) {
+								}
+							}
 							jfuser.dispose();
 							loginf.setvisible(true);
 						}
 					});
+			
+			//send on-line
+			Online();
+			
+		}
+		/**
+		 * send on-line data and refresh list
+		 */
+		public void Online(){
+			try{
+				DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
+				
+				//construct on line string
+				JsonObject message=new JsonObject();
+				message.addProperty("ID", ID);
+				message.addProperty("type", 2);
+				Gson cgson=new Gson();
+				String str=cgson.toJson(message);
+				out.writeUTF(str);
+				Thread listenT=new Thread(
+						new Runnable(){
+							public void run(){
+								try {
+									DataInputStream in =new DataInputStream(sconnect.getInputStream());
+									sconnect.setSoTimeout(0);
+									while(state){
+										String str=in.readUTF();
+										Gson gson=new Gson();
+										CMessage message=gson.fromJson(str, CMessage.class);
+										int type=message.gettype();
+										if(type==4){
+											ulists=message.getulist();
+											v.clear();
+											for (Ulist ulist:ulists){
+												String Vstr=ulist.getID()+"  "+ulist.getname()+"  "+(ulist.getstate()==1?"在线":"离线");
+												v.add(Vstr);
+											}
+											Collections.sort(v);
+											jluser.setListData(v);
+										}
+										
+									}			
+								} catch (Exception e) {
+									if (sconnect!=null&&!sconnect.isClosed()){
+										JOptionPane.showMessageDialog(jfuser.getContentPane(),
+												"网络发生故障请重新登录"+e.getMessage(), "sorry！", JOptionPane.WARNING_MESSAGE);
+										try {
+											sconnect.close();
+										} catch (Exception e2) {
+										}
+									}
+									jfuser.dispose();
+									loginf.setvisible(true);
+								}
+							}
+						}
+						);
+				listenT.start();
+				
+				
+			}catch(Exception e){
+				
+			}
+		}
+		
+		public void Offline(){
 			
 		}
 	}
@@ -452,11 +534,11 @@ public class MainFrame {
 			return ID;
 		}
 		
-		public String name(){
+		public String getname(){
 			return name;
 		}
 		
-		public int state(){
+		public int getstate(){
 			return state;
 		}
 	}

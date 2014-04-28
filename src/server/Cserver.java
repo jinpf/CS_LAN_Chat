@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 /**
  * connection server,listen to connections,handle client register on-line off-line
@@ -18,7 +19,6 @@ import com.google.gson.JsonObject;
  */
 public class Cserver {
 	private ServerSocket Cserver;
-	private Socket client;
 	private static boolean state; 
 	private String DBDRIVER = "org.gjt.mm.mysql.Driver" ;
 	private String DBURL = "jdbc:mysql://localhost:3306/socket_test" ;
@@ -41,7 +41,7 @@ public class Cserver {
 			conn = DriverManager.getConnection(DBURL,DBUSER,DBPASS) ;		// 数据库连接
 			while(state){
 				try {
-					client=Cserver.accept();
+					final Socket client=Cserver.accept();
 					Thread CSlistenT=new Thread(
 							new Runnable(){
 								public void run(){
@@ -119,6 +119,49 @@ public class Cserver {
 													rs.close() ;
 													stmt.close();
 													
+												}else if(type==2){
+													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
+													String sql="UPDATE user SET state=1 where id="+Cmessage.getID();
+													stmt.executeUpdate(sql) ;
+													stmt.close();
+													Thread SendlistT=new Thread(
+															new Runnable(){
+																public void run(){
+																	while(true){
+																		try{
+																			Statement stmt = conn.createStatement() ;	// 数据库的操作对象
+																			String sql="select id,name,state from user";
+																			ResultSet rs = null ;		// 保存查询结果
+																			rs = stmt.executeQuery(sql) ;
+																			
+																			JsonObject message=new JsonObject();
+																			message.addProperty("type", 4);
+																			JsonArray ulists=new JsonArray();
+																			while(rs.next()){
+																				JsonObject user=new JsonObject();
+																				user.addProperty("ID", rs.getInt("id"));
+																				user.addProperty("name", rs.getString("name"));
+																				user.addProperty("state", rs.getInt("state"));
+																				ulists.add(user);
+																			}
+																			message.add("ulists", ulists);
+																			Gson gson=new Gson();
+																			String str=gson.toJson(message);
+																			DataOutputStream out=new DataOutputStream(client.getOutputStream());
+																			System.out
+																					.println(client.getPort()+str);
+																			out.writeUTF(str);
+																			Thread.sleep(3000);
+																			
+																		}catch(Exception e){
+																			System.out
+																					.println("type 4!exception"+e.getMessage());
+																			break;
+																		}
+																	}
+																}
+															});
+													SendlistT.start();
 												}
 												
 												
@@ -226,11 +269,11 @@ public class Cserver {
 			return ID;
 		}
 		
-		public String name(){
+		public String getname(){
 			return name;
 		}
 		
-		public int state(){
+		public int getstate(){
 			return state;
 		}
 	}
