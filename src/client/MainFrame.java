@@ -109,7 +109,6 @@ public class MainFrame {
 									//send login message to check
 									try {
 										sconnect=new Socket("localhost", 8888);
-										DataInputStream in =new DataInputStream(sconnect.getInputStream());
 										DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
 										jblogin.setEnabled(false);
 										
@@ -129,11 +128,11 @@ public class MainFrame {
 															sconnect.setSoTimeout(500);
 															String str=in.readUTF();
 															Gson gson=new Gson();
-															Connection message=gson.fromJson(str, Connection.class);
+															CMessage message=gson.fromJson(str, CMessage.class);
 															int type=message.gettype();
 															if (type==8){//ok!
 																//start user frame
-																userf=new frmuser(jtfname.getText());
+																userf=new frmuser(jtfname.getText(),message.getID());
 																loginf.setvisible(false);
 															}else if(type==9){
 																JOptionPane.showMessageDialog(jflogin.getContentPane(),
@@ -286,11 +285,11 @@ public class MainFrame {
 																sconnect.setSoTimeout(500);
 																String str=in.readUTF();
 																Gson gson=new Gson();
-																Connection message=gson.fromJson(str, Connection.class);
+																CMessage message=gson.fromJson(str, CMessage.class);
 																int type=message.gettype();
-																if (type==8){//ok!
+																if (type==8){//OK!
 																	//start user frame
-																	userf=new frmuser(jtfname.getText());
+																	userf=new frmuser(jtfname.getText(),message.getID());
 																	jfsignup.dispose();
 																}else if(type==9){
 																	JOptionPane.showMessageDialog(jfsignup.getContentPane(),
@@ -352,7 +351,7 @@ public class MainFrame {
 		private JList jluser;
 		private JScrollPane jspuser;
 		
-		public frmuser(String name){
+		public frmuser(String name,int ID){
 			jfuser=new JFrame(name);
 			
 			jluser=new JList();
@@ -390,7 +389,7 @@ public class MainFrame {
 	
 	
 	//connect message format
-	public class Connection{
+	public class CMessage{
 		private int ID;
 		private String name;
 		private String password;
