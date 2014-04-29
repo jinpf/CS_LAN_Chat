@@ -3,6 +3,8 @@ package client;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
@@ -92,12 +94,12 @@ public class UserFrame{
 		
 		tabbedPane.addTab("联系人", jspuser);
 		tabbedPane.addTab("群   组", jpgroup);
-		tabbedPane.setBounds(20, 20, 195, 360);
+		tabbedPane.setBounds(10, 10, 195, 380);
 		
 		jfuser.setLayout(null);
 		jfuser.setResizable(false);
 		jfuser.add(tabbedPane);
-		jfuser.setSize(240, 430);
+		jfuser.setSize(220, 440);
 		//set frame at the center of the screen
 		jfuser.setLocationRelativeTo(null);
 		jfuser.setVisible(true);
@@ -125,6 +127,17 @@ public class UserFrame{
 		
 		//send on-line
 		Online();
+		
+		jluser.addMouseListener(
+				new MouseAdapter(){  
+				    public void mouseClicked(MouseEvent e){  
+				        if(e.getClickCount()==2){   //When double click JList  
+				        	String temp[]=jluser.getSelectedValue().toString().split("  ");
+				        	int tid=Integer.parseInt(temp[0]);
+				        	new ChatFrame(temp[1],ID,tid);
+				        }
+				    }
+				});
 		
 	}
 	/**

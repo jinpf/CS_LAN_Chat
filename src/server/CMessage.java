@@ -1,4 +1,4 @@
-package client;
+package server;
 
 /**
  * connection message format
