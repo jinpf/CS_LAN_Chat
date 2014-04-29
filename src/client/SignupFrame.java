@@ -37,8 +37,11 @@ public class SignupFrame{
 
 	private Socket sconnect;
 	private LoginFrame loginf;
+
 	/**
 	 * sign up frame
+	 * @param lgf
+	 * LoginFrame, login frame, the start frame, to set visible 
 	 */
 	public SignupFrame(LoginFrame lgf){
 		loginf=lgf;

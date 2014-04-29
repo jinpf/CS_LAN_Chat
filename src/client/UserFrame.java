@@ -1,6 +1,8 @@
 package client;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
@@ -10,10 +12,13 @@ import java.util.Collections;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 
 import com.google.gson.Gson;
@@ -28,6 +33,12 @@ public class UserFrame{
 	private JFrame jfuser;
 	private JList jluser;
 	private JScrollPane jspuser;
+	private JList jlgroup;
+	private JScrollPane jspgroup;
+	private JTabbedPane tabbedPane;
+	private JPanel jpgroup;
+	private JButton jbjoingroup;
+	
 	private String Name;
 	private int ID;
 	private boolean state=true;
@@ -36,24 +47,56 @@ public class UserFrame{
 	private Vector<String> v=new Vector<String>();
 	
 	private LoginFrame loginf;
-	
+	/**
+	 * user communicate frame
+	 * @param name
+	 * String, user name
+	 * @param id
+	 * int, user id
+	 * @param sc
+	 * Socket, connect socket
+	 * @param lgf
+	 * LoginFrame, login frame, the start frame, to set visible 
+	 */
 	public UserFrame(String name,int id,Socket sc,LoginFrame lgf){
 		Name=name;
 		sconnect=sc;
 		loginf=lgf;
-		jfuser=new JFrame(Name);
 		ID=id;
+		
+		jfuser=new JFrame(Name);
 		jluser=new JList();
+		jlgroup=new JList();
+		jbjoingroup=new JButton("创建 / 加入群组");
+		jpgroup=new JPanel();
+		tabbedPane = new JTabbedPane();
+		
+		Font fnt = new Font("微软雅黑",Font.PLAIN +Font.BOLD,12);
+		jbjoingroup.setFont(fnt);
+		tabbedPane.setFont(fnt);
+		
 		jluser.setBorder(BorderFactory.createTitledBorder("所有用户："));
+		jlgroup.setBorder(BorderFactory.createTitledBorder("所有群组："));
+		
 		jluser.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		jluser.setBackground(new Color(245,245,245));
-		jspuser=new JScrollPane(jluser);
+		jlgroup.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		jlgroup.setBackground(new Color(245,245,245));
 		
-		jspuser.setBounds(20, 20, 195, 360);
+		jspuser=new JScrollPane(jluser);
+		jspgroup=new JScrollPane(jlgroup);
+		
+		jpgroup.setLayout(new BorderLayout(2,2));
+		jpgroup.add(jspgroup,BorderLayout.CENTER);
+		jpgroup.add(jbjoingroup,BorderLayout.SOUTH);
+		
+		tabbedPane.addTab("联系人", jspuser);
+		tabbedPane.addTab("群   组", jpgroup);
+		tabbedPane.setBounds(20, 20, 195, 360);
 		
 		jfuser.setLayout(null);
 		jfuser.setResizable(false);
-		jfuser.add(jspuser);
+		jfuser.add(tabbedPane);
 		jfuser.setSize(240, 430);
 		//set frame at the center of the screen
 		jfuser.setLocationRelativeTo(null);
