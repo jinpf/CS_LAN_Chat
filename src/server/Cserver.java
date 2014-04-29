@@ -41,11 +41,11 @@ public class Cserver {
 			conn = DriverManager.getConnection(DBURL,DBUSER,DBPASS) ;		// 数据库连接
 			while(state){
 				try {
-					final Socket client=Cserver.accept();
+					final Socket client=Cserver.accept();//client socket,each user use one socket
 					Thread CSlistenT=new Thread(
 							new Runnable(){
 								public void run(){
-
+									int CID=-1; //use when exception,mark the Connect ID
 									try{
 										DataInputStream in=new DataInputStream(client.getInputStream());
 										DataOutputStream out=new DataOutputStream(client.getOutputStream());
@@ -58,6 +58,7 @@ public class Cserver {
 												CMessage Cmessage=cigson.fromJson(istr, CMessage.class);
 												
 												int type=Cmessage.gettype();
+												CID=Cmessage.getID();
 												if (type==0){//sign up
 													//check SQL to see if contain the user
 													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
@@ -93,7 +94,7 @@ public class Cserver {
 													rs.close() ;
 													stmt.close();
 											
-												}else if(type==1){
+												}else if(type==1){//sign in
 													//check SQL to see if user password correct
 													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
 													String sql="select id from user where name='"+Cmessage.getname()+"' and password='"+Cmessage.getpassword()+"'";
@@ -119,7 +120,7 @@ public class Cserver {
 													rs.close() ;
 													stmt.close();
 													
-												}else if(type==2){
+												}else if(type==2){//on-line
 													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
 													String sql="UPDATE user SET state=1 where id="+Cmessage.getID();
 													stmt.executeUpdate(sql) ;
@@ -151,7 +152,7 @@ public class Cserver {
 																			System.out
 																					.println(client.getPort()+str);
 																			out.writeUTF(str);
-																			Thread.sleep(3000);
+																			Thread.sleep(2000);
 																			
 																		}catch(Exception e){
 																			System.out
@@ -162,11 +163,24 @@ public class Cserver {
 																}
 															});
 													SendlistT.start();
+												}else if(type==3){//off-line
+													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
+													String sql="UPDATE user SET state=0 where id="+Cmessage.getID();
+													stmt.executeUpdate(sql) ;
+													stmt.close();
+													break;//break the while loop ,close the connect socket then
 												}
 												
 												
 											}catch(Exception e2){
 												System.out.println(e2.getMessage());
+												if(CID!=-1){
+													Statement stmt = conn.createStatement() ;	// 数据库的操作对象
+													String sql="UPDATE user SET state=0 where id="+CID;
+													stmt.executeUpdate(sql) ;
+													stmt.close();
+												}
+												
 												break;
 											}
 										}
@@ -185,6 +199,7 @@ public class Cserver {
 		}catch(Exception e){
 			//MySQL connect failure
 			System.out.println(e.getMessage());
+			System.out.println("pay attention of your mysql service!");
 			System.exit(1) ;
 		}
 		

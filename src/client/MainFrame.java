@@ -385,7 +385,7 @@ public class MainFrame {
 						 */
 						public void windowClosing(WindowEvent e){
 							//off-line
-							
+							Offline();
 							state=false;
 							
 							if (sconnect!=null&&!sconnect.isClosed()){
@@ -462,9 +462,23 @@ public class MainFrame {
 				
 			}
 		}
-		
+		/**
+		 * send off-line data
+		 */
 		public void Offline(){
-			
+			try{
+				DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
+				
+				//construct on line string
+				JsonObject message=new JsonObject();
+				message.addProperty("ID", ID);
+				message.addProperty("type", 3);
+				Gson cgson=new Gson();
+				String str=cgson.toJson(message);
+				out.writeUTF(str);
+			}catch(Exception e){
+				
+			}
 		}
 	}
 	
