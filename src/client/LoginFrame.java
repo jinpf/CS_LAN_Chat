@@ -5,7 +5,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,6 +36,8 @@ public class LoginFrame{
 	private JButton jbsignup=new JButton("注册");
 	private JButton jblogin=new JButton("登录");
 	private static LoginFrame loginf;
+	private String sIP=null;	//server ip
+	private int scport=0;	//server connection server port
 	/**
 	 * login frame
 	 */
@@ -66,6 +72,9 @@ public class LoginFrame{
 		jflogin.setVisible(true);
 		jflogin.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
+		findserverIP();//find server IP
+		
+		
 		//click sign up button ,start sign up frame
 		jbsignup.addActionListener(
 				new ActionListener(){
@@ -74,7 +83,7 @@ public class LoginFrame{
 							
 							//start sign up frame
 							jflogin.setVisible(false);
-							new SignupFrame(loginf);
+							new SignupFrame(loginf,sIP,scport);
 							
 						}
 					}
@@ -92,7 +101,7 @@ public class LoginFrame{
 								
 								//send login message to check
 								try {
-									sconnect=new Socket("localhost", 8888);
+									sconnect=new Socket(sIP, scport);
 									DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
 									jblogin.setEnabled(false);
 									
@@ -169,6 +178,48 @@ public class LoginFrame{
 	 */
 	public void setvisible(boolean state){
 		jflogin.setVisible(state);
+	}
+	
+	public void findserverIP(){
+		try {
+			DatagramSocket discover=new DatagramSocket(0);
+			DatagramPacket Receive=new DatagramPacket(new byte[128],128);
+			String SendS="hi";
+			for (int i=3000;i<3005;i++){
+				try {
+					DatagramPacket BroadCast=new DatagramPacket(SendS.getBytes("UTF-8"),SendS.length(),InetAddress.getByName("255.255.255.255"),i);
+					discover.setSoTimeout(500);
+					for(int k=0;k<3;k++){
+						try{
+							discover.send(BroadCast);
+							discover.receive(Receive);
+							sIP=Receive.getAddress().getHostAddress();
+							String str = new String(Receive.getData(),0,Receive.getLength(),"UTF-8");
+							scport=Integer.parseInt(str);
+							System.out.println(scport);
+							break;
+						}catch(Exception e1){
+							
+						}
+					}
+					break;
+				}catch(Exception e){		
+				}
+			}
+			discover.close();
+			if(sIP==null || scport==0){
+				JOptionPane.showMessageDialog(jflogin.getContentPane(),
+						"无法连接到服务器", "连接失败！", JOptionPane.WARNING_MESSAGE);
+				System.exit(1);
+			}
+		} catch (SocketException e1) {
+			System.out.println(e1.getMessage());
+			JOptionPane.showMessageDialog(jflogin.getContentPane(),
+					"无法连接到服务器", "连接失败！", JOptionPane.WARNING_MESSAGE);
+			System.exit(1);
+		}
+		
+		
 	}
 	
 	public static void main(String args[]){

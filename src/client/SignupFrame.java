@@ -36,6 +36,8 @@ public class SignupFrame{
 	private JButton jbsignup=new JButton("注册");
 
 	private Socket sconnect;
+	private String sIP;
+	private int scport;
 	private LoginFrame loginf;
 
 	/**
@@ -43,8 +45,10 @@ public class SignupFrame{
 	 * @param lgf
 	 * LoginFrame, login frame, the start frame, to set visible 
 	 */
-	public SignupFrame(LoginFrame lgf){
+	public SignupFrame(LoginFrame lgf,String ip,int port){
 		loginf=lgf;
+		sIP=ip;
+		scport=port;
 		Font fnt = new Font("微软雅黑",Font.PLAIN +Font.BOLD,12);
 		jfsignup.setFont(fnt);
 		jlname.setFont(fnt);
@@ -104,7 +108,7 @@ public class SignupFrame{
 									jbsignup.setEnabled(false);
 									//send login message to check
 									try {
-										sconnect=new Socket("localhost", 8888);
+										sconnect=new Socket(sIP, scport);
 										DataOutputStream out=new DataOutputStream(sconnect.getOutputStream());
 										
 										

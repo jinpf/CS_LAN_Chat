@@ -17,9 +17,9 @@ import com.google.gson.JsonObject;
  * @author jinpf
  *
  */
-public class Cserver {
+public class CServer {
 	private ServerSocket Cserver;
-	private static boolean state; 
+	private boolean state; 
 	private String DBDRIVER = "org.gjt.mm.mysql.Driver" ;
 	private String DBURL = "jdbc:mysql://localhost:3306/socket_test" ;
 	private String DBUSER = "jinpf" ;
@@ -30,7 +30,7 @@ public class Cserver {
 	 * @param s
 	 * ServerSocket,listening socket
 	 */
-	public Cserver(ServerSocket s) {
+	public CServer(ServerSocket s) {
 		Cserver=s;
 		state=true;
 		
